@@ -128,8 +128,8 @@ class NfcoreTemplate {
         def email_html    = html_template.toString()
 
         // Render the sendmail template
-        def max_multiqc_email_size = params.max_multiqc_email_size as nextflow.util.MemoryUnit
-        def smail_fields           = [ email: email_address, subject: subject, email_txt: email_txt, email_html: email_html, projectDir: "$projectDir", mqcFile: mqc_report, mqcMaxSize: max_multiqc_email_size.toBytes() ]
+        def max_email_size = params.max_email_size as nextflow.util.MemoryUnit
+        def smail_fields           = [ email: email_address, subject: subject, email_txt: email_txt, email_html: email_html, projectDir: "$projectDir", mqcFile: mqc_report, mqcMaxSize: max_email_size.toBytes() ]
         def sf                     = new File("$projectDir/assets/sendmail_template.txt")
         def sendmail_template      = engine.createTemplate(sf).make(smail_fields)
         def sendmail_html          = sendmail_template.toString()
@@ -145,7 +145,7 @@ class NfcoreTemplate {
             } catch (all) {
                 // Catch failures and try with plaintext
                 def mail_cmd = [ 'mail', '-s', subject, '--content-type=text/html', email_address ]
-                if ( mqc_report.size() <= max_multiqc_email_size.toBytes() ) {
+                if ( mqc_report.size() <= max_email_size.toBytes() ) {
                     mail_cmd += [ '-A', mqc_report ]
                 }
                 mail_cmd.execute() << email_html
@@ -320,16 +320,21 @@ class NfcoreTemplate {
     public static String logo(workflow, monochrome_logs) {
         Map colors = logColours(monochrome_logs)
         String workflow_version = NfcoreTemplate.version(workflow)
+        // String.format(
+        //     """\n
+        //     ${dashedLine(monochrome_logs)}
+        //                                             ${colors.green},--.${colors.black}/${colors.green},-.${colors.reset}
+        //     ${colors.blue}        ___     __   __   __   ___     ${colors.green}/,-._.--~\'${colors.reset}
+        //     ${colors.blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${colors.yellow}}  {${colors.reset}
+        //     ${colors.blue}  | \\| |       \\__, \\__/ |  \\ |___     ${colors.green}\\`-._,-`-,${colors.reset}
+        //                                             ${colors.green}`._,._,\'${colors.reset}
+        //     ${colors.purple}  ${workflow.manifest.name} ${workflow_version}${colors.reset}
+        //     ${dashedLine(monochrome_logs)}
+        //     """.stripIndent()
+        // )
         String.format(
-            """\n
-            ${dashedLine(monochrome_logs)}
-                                                    ${colors.green},--.${colors.black}/${colors.green},-.${colors.reset}
-            ${colors.blue}        ___     __   __   __   ___     ${colors.green}/,-._.--~\'${colors.reset}
-            ${colors.blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${colors.yellow}}  {${colors.reset}
-            ${colors.blue}  | \\| |       \\__, \\__/ |  \\ |___     ${colors.green}\\`-._,-`-,${colors.reset}
-                                                    ${colors.green}`._,._,\'${colors.reset}
-            ${colors.purple}  ${workflow.manifest.name} ${workflow_version}${colors.reset}
-            ${dashedLine(monochrome_logs)}
+            """
+            ${colors.purple}  ${workflow.manifest.name} ${workflow_version}${colors.reset}\n
             """.stripIndent()
         )
     }

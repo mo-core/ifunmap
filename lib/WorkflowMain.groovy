@@ -4,25 +4,15 @@
 
 class WorkflowMain {
 
-    //
-    // Citation string for pipeline
-    //
     public static String citation(workflow) {
-        return "If you use ${workflow.manifest.name} for your analysis please cite:\n\n" +
-            // TODO nf-core: Add Zenodo DOI for pipeline after first release
-            //"* The pipeline\n" +
-            //"  https://doi.org/10.5281/zenodo.XXXXXXX\n\n" +
-            "* The nf-core framework\n" +
-            "  https://doi.org/10.1038/s41587-020-0439-x\n\n" +
-            "* Software dependencies\n" +
-            "  https://github.com/${workflow.manifest.name}/blob/master/CITATIONS.md"
+        return ""
     }
 
     //
     // Generate help string
     //
     public static String help(workflow, params, log) {
-        def command = "nextflow run ${workflow.manifest.name} --input samplesheet.csv --genome GRCh37 -profile docker"
+        def command = "nextflow run ${workflow.manifest.name} --config_file config.yml -profile docker"
         def help_string = ''
         help_string += NfcoreTemplate.logo(workflow, params.monochrome_logs)
         help_string += NfcoreSchema.paramsHelp(workflow, params, command)
@@ -38,8 +28,8 @@ class WorkflowMain {
         def summary_log = ''
         summary_log += NfcoreTemplate.logo(workflow, params.monochrome_logs)
         summary_log += NfcoreSchema.paramsSummaryLog(workflow, params)
-        summary_log += '\n' + citation(workflow) + '\n'
-        summary_log += NfcoreTemplate.dashedLine(params.monochrome_logs)
+        // summary_log += '\n' + citation(workflow) + '\n'
+        // summary_log += NfcoreTemplate.dashedLine(params.monochrome_logs)
         return summary_log
     }
 
@@ -80,10 +70,11 @@ class WorkflowMain {
         NfcoreTemplate.awsBatch(workflow, params)
 
         // Check input has been provided
-        if (!params.input) {
-            log.error "Please provide an input samplesheet to the pipeline e.g. '--input samplesheet.csv'"
+        if (!params.config_file) {
+            log.error "Please provide a configuration file to the pipeline e.g. '--config_file config.yml'"
             System.exit(1)
         }
+
     }
     //
     // Get attribute from genome config file e.g. fasta
