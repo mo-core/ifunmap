@@ -1,14 +1,15 @@
 process FUNMAP {
-    tag "$config_file"
-    label 'process_single'
+    tag "funmap"
+    label 'process_funmap'
 
     container 'registry.gitlab.com/bzhanglab/funmap:latest'
 
     input:
     path config_file
+    path data_file
 
     output:
-    path 'config.yml' , emit: yml
+    path 'results', emit: funmap_results
     path 'versions.yml', emit: versions
 
     when:
@@ -16,17 +17,11 @@ process FUNMAP {
 
     script: // This script is bundled with the pipeline, in mo-core/ifunmap/bin/
     """
-
-
-
-
-
-
-
+    funmap -c ${config_file} -d ${data_file} -o results
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
+       funmap: \$(fumap --version)
     END_VERSIONS
     """
 }

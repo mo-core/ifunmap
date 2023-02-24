@@ -62,18 +62,20 @@ def check_inputs(config_file, data_file):
 
     is_tar_gz_file(data_file)
 
-    # check all file listed under data_files are also in the tar.gz file
-    data_files = yaml_obj['data_files']
-    # list all the files in the tar.gz file
-    with tarfile.open(data_file, "r:gz") as tar:
-        tar_files = tar.getnames()
-        # get the file names only without the path prefix
-        tar_files = [Path(file).name for file in tar_files]
+    # funmap should check if the files listed under data_files are also in the tar.gz file
 
-    # check if all files in data_files are in tar_files
-    if not all(file['path'] in tar_files for file in data_files):
-        print(f'Files listed under data_files are not in the tar.gz file!')
-        raise ValueError('Files listed under data_files are not in the tar.gz file!')
+    # # check all file listed under data_files are also in the tar.gz file
+    # data_files = yaml_obj['data_files']
+    # # list all the files in the tar.gz file
+    # with tarfile.open(data_file, "r:gz") as tar:
+    #     tar_files = tar.getnames()
+    #     # get the file names only without the path prefix
+    #     tar_files = [Path(file).name for file in tar_files]
+
+    # # check if all files in data_files are in tar_files
+    # if not all(file['path'] in tar_files for file in data_files):
+    #     print(f'Files listed under data_files are not in the tar.gz file!')
+    #     raise ValueError('Files listed under data_files are not in the tar.gz file!')
 
     with open('config.yml', 'w') as file:
         yaml.dump(yaml_obj, file)

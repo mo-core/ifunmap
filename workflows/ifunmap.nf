@@ -26,6 +26,7 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 */
 
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
+include { FUNMAP } from '../modules/local/funmap'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,9 +46,15 @@ workflow IFUNMAP {
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
-    // CUSTOM_DUMPSOFTWAREVERSIONS (
-    //     ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    // )
+    FUNMAP (
+        INPUT_CHECK.out.config_file,
+        ch_data
+    )
+    ch_versions = ch_versions.mix(FUNMAP.out.versions)
+
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
 
     // workflow_summary    = WorkflowIfunmap.paramsSummaryMultiqc(workflow, summary_params)
     // ch_workflow_summary = Channel.value(workflow_summary)
