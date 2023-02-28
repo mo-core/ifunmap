@@ -10,17 +10,8 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": ["outdir", "config_file", "data_file"],
+            "required": ["outdir"],
             "properties": {
-                "config_file": {
-                    "type": "string",
-                    "default": "None",
-                    "description": "configuration yaml file"
-                },
-                "data_file": {
-                    "type": "string",
-                    "default": null
-                },
                 "outdir": {
                     "type": "string",
                     "fa_icon": "fas fa-folder",
@@ -32,6 +23,38 @@
                     "fa_icon": "fas fa-envelope",
                     "help_text": "Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.",
                     "pattern": "^([a-zA-Z0-9_\\-\\.]+)@([a-zA-Z0-9_\\-\\.]+)\\.([a-zA-Z]{2,5})$"
+                }
+            }
+        },
+        "funmap": {
+            "title": "Funmap",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "config_file": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "configuration yaml file"
+                },
+                "data_file": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "tar zipped data file for FunMap"
+                }
+            },
+            "required": ["config_file", "data_file"]
+        },
+        "ice": {
+            "title": "ICE",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "ice_min_sz": {
+                    "type": "integer",
+                    "default": 5,
+                    "description": "min clique size"
                 }
             }
         },
@@ -204,6 +227,12 @@
     "allOf": [
         {
             "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/funmap"
+        },
+        {
+            "$ref": "#/definitions/ice"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

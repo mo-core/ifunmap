@@ -27,6 +27,7 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { FUNMAP } from '../modules/local/funmap'
+include { ICE } from '../modules/local/ice'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -51,6 +52,12 @@ workflow IFUNMAP {
         ch_data
     )
     ch_versions = ch_versions.mix(FUNMAP.out.versions)
+
+    ICE (
+        FUNMAP.out.funmap_el
+    )
+    ch_versions = ch_versions.mix(ICE.out.versions)
+
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
