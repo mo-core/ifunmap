@@ -1,6 +1,6 @@
 process FUNMAP {
-    tag  "${workflow.stubRun}" ? 'funmap_stub' : 'funmap'
-    label  "${workflow.stubRun}" ? 'process_funmap_stub' : 'process_funmap'
+    tag  "${if (workflow.stubRun) 'funmap_stub' else 'funmap'}"
+    label  "${if (workflow.stubRun) 'process_funmap_stub' else 'process_funmap'}"
 
     container 'registry.gitlab.com/bzhanglab/funmap:latest'
 
