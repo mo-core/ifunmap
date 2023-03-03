@@ -28,6 +28,7 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
 include { FUNMAP } from '../modules/local/funmap'
 include { ICE } from '../modules/local/ice'
+include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -57,6 +58,12 @@ workflow IFUNMAP {
         FUNMAP.out.funmap_el
     )
     ch_versions = ch_versions.mix(ICE.out.versions)
+
+    CLIQUE_ENRICH (
+        FUNMAP.out.funmap_el,
+        ICE.out.ice_results
+    )
+    ch_versions = ch_versions.mix(CLIQUE_ENRICH.out.versions)
 
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
