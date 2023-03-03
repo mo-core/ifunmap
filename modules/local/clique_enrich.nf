@@ -1,6 +1,5 @@
 process CLIQUE_ENRICH {
-    //tag  "${if (workflow.stubRun) 'clique_enrich_stub' else 'clique_enrich'}"
-    tag  'clique_enrich'
+    tag  "${if (workflow.stubRun) 'clique_enrich_stub' else 'clique_enrich'}"
     label 'process_medium'
 
     container 'registry.gitlab.com/bzhanglab/webgestaltr:0.4.5'
@@ -31,4 +30,14 @@ process CLIQUE_ENRICH {
        webgestaltR: 0.4.5
     END_VERSIONS
     """
+
+    stub:
+    """
+    wget "https://drive.google.com/uc?id=1M92JmXsZyYqbZnxwTsn2onflbKW_msyI&export=download" -O ice_funmap_5_enrich.tsv
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+       webgestaltR: 0.4.5
+    END_VERSIONS
+    """
+
 }
