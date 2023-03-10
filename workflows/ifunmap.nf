@@ -29,6 +29,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 include { FUNMAP } from '../modules/local/funmap'
 include { ICE } from '../modules/local/ice'
 include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
+include { FUNMAP_VIZ } from '../modules/local/funmap_viz'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,6 +66,11 @@ workflow IFUNMAP {
     )
     ch_versions = ch_versions.mix(CLIQUE_ENRICH.out.versions)
 
+    FUNMAP_VIZ (
+        FUNMAP.out.funmap_el,
+        ICE.out.ice_results
+    )
+    ch_versions = ch_versions.mix(FUNMAP_VIZ.out.versions)
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
