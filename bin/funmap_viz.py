@@ -1,25 +1,53 @@
 #!/usr/bin/env python
 import os
 import io
+import re
 import itertools
 import argparse
 import warnings
 import random
+import gc
+import yaml
+import tarfile
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.patches import ConnectionPatch
 from bioservices import BioMart
 import igraph
 import py4cytoscape as p4c
-# from matplotlib_venn import venn3, venn3_circles, venn3_unweighted
+from matplotlib_venn import venn3, venn3_circles, venn3_unweighted
 import networkx as nx
+import seaborn as sns
 
 
 mpl.rcParams['pdf.fonttype'] = 42  # TrueType fonts for ease of editing in illustrator
 mpl.rcParams['font.family'] = 'Arial'
 mpl.rcParams['font.size'] = 24
 mpl.rcParams['savefig.dpi'] = 600
+mpl.use('Agg')
+
+def make_valid_filename(filename):
+    # remove any invalid characters from the filename
+    filename = re.sub(r'[^\w\s-]', '', filename)
+    # replace any whitespace characters with an underscore
+    filename = re.sub(r'\s+', '_', filename)
+    # remove any leading or trailing hyphens
+    filename = re.sub(r'^-+|-+$', '', filename)
+    # return the cleaned-up filename
+    return filename
+
+def add_commas(num):
+    """
+    Takes a number as input and returns it as a string with commas separating the thousands.
+    """
+    num_str = str(num)
+    if len(num_str) <= 3:
+        return num_str
+    else:
+        return add_commas(num_str[:-3]) + ',' + num_str[-3:]
+
 
 def random_colors(n=10):
     """ return a list of hex codes of lighter colors"""
@@ -561,172 +589,57 @@ def arg_parse():
                         help='path to the input network edge list file.(gene symbol)')
     parser.add_argument('-i', '--ice-module-file', type=str, required=True,
                         help='path to the output of ICE module file.')
+    parser.add_argument('-e', '--enrich-results-file', type=str, required=True,
+                        help='path to the enrichment results file.')
+    parser.add_argument('-c', '--funmap-config-file', type=str, required=True,
+                        help='path to the config file for funmap.')
+    parser.add_argument('-d', '--data-file', type=str, required=True,
+                        help='path to the data file for funmap.')
     args = parser.parse_args()
     return args
 
 
-def create_nx_graph_for_one_complex(corum_data, funmap, bioplex, symbol_dict):
-    # only one row
-    assert corum_data.shape[0] == 1
-    row = corum_data.iloc[[0], :]
-    complex_name = row['ComplexName'].values[0]
-    gene_ids = row['ComplexSubunits'].values[0].split('|')
-    complex_id = row['ComplexID'].values[0]
-    pairs = [tuple(sorted(list(t))) for t in itertools.combinations(gene_ids,2)]
-    pairs_set = set(pairs)
-    funmap_pairs = pairs_set.intersection(funmap)
-    bioplex_pairs = pairs_set.intersection(bioplex)
+def plot_venn(set_data, labels, filename):
+    # data is a tuple of (Abc, aBc, ABc, abC, AbC, aBC, ABC)
+    # modify labels to add total sum of each set
+    labels = list(labels)
+    print(set_data)
+    set_a_sum = set_data[0] + set_data[2] + set_data[4] + set_data[6]
+    set_b_sum = set_data[1] + set_data[2] + set_data[5] + set_data[6]
+    set_c_sum = set_data[3] + set_data[4] + set_data[5] + set_data[6]
+    sums = [set_a_sum, set_b_sum, set_c_sum]
+    print(sums)
+    new_labels = []
+    for (i, l) in enumerate(labels):
+        new_labels.append(f'{l} ({add_commas(sums[i])})')
 
-    assert not(len(funmap_pairs) == 0 and len(bioplex_pairs) == 0)
-    sources = ['corum' for i in range(len(pairs))]
-    new_evidences = [0 for i in range(len(pairs))]
-    for pair in funmap_pairs:
-        sources[pairs.index(pair)] = 'funmap'
-        new_evidences[pairs.index(pair)] = 0
-    pairs_names = [(t[0] + '_' + str(complex_id), t[1] + '_' + str(complex_id)) for t in pairs]
-    for pair in bioplex_pairs:
-        if sources[pairs.index(pair)] == 'corum':
-            sources[pairs.index(pair)] = 'bioplex'
-        else:
-            sources[pairs.index(pair)] = 'bioplex_funmap'
-
-    ensembl_gene_ids = gene_ids
-    corum_ids = [complex_id for i in range(len(gene_ids))]
-    symbols = [(symbol_dict[gene_id] if gene_id in symbol_dict else gene_id) for gene_id in gene_ids]
-    names = [gene_id + '_' + str(complex_id) for gene_id in gene_ids]
-    node_mapping = {names[i]: symbols[i] for i, gene_id in enumerate(gene_ids)}
-    nodes = names
-    edges = pairs_names
-
-    g = nx.Graph()
-    g.add_nodes_from(nodes)
-    g.add_edges_from(edges)
-    g = nx.relabel_nodes(g, node_mapping)
-
-    sources_0 = [f'0_{i}' if i == 'corum' else i for i in sources ]
-
-    df = pd.DataFrame.from_dict({'source':sources_0, 'edge': list(g.edges)})
-    df = df.sort_values(by='source')
-    # reorder edges for better visualization so corum edges will be drawn first
-    sources = list(df['source'])
-    sorted_edges = list(df['edge'])
-    # g.remove_edges_from(g.edges())
-    g = nx.Graph()
-    for i in sorted_edges:
-        print(i)
-        g.add_edge(*i)
-
-    edge_color = []
-    default_width = 4.0
-    edge_width = []
-    for idx, edge in enumerate(g.edges):
-        if sources[idx] == '0_corum':
-            edge_color.append('#f8f8f8')
-            edge_width.append(default_width)
-        elif sources[idx] == 'funmap':
-            edge_color.append('#ff908e')
-            edge_width.append(default_width)
-        elif sources[idx] == 'bioplex_funmap':
-            edge_color.append('#ff82fd')
-            edge_width.append(default_width)
-        elif sources[idx] == 'bioplex':
-            edge_color.append('#a4beff')
-            edge_width.append(default_width)
-
-    return complex_name, g, edge_color, edge_width
-
-
-def create_igraph_with_node_list(nodes):
-    g = igraph.Graph()
-    edges = []
-    g.add_vertices(nodes)
-    for i in range(len(nodes)):
-        for j in range(i+1, len(nodes)):
-            edges.append((nodes[i], nodes[j]))
-    g.add_edges(edges)
-    g.vs['symbols'] = nodes
-
-    return g
-
-
-def create_igraph_for_one_corum_complex(corum_data, funmap, bioplex, symbol_dict):
-    # only one row
-    assert corum_data.shape[0] == 1
-    row = corum_data.iloc[[0], :]
-    complex_name = row['complex_name'].values[0]
-    complex_name_list = complex_name.split(' ')
-    if complex_name_list[-1] == 'complex':
-        complex_name = ' '.join(complex_name_list[:-1])
-    gene_ids = row['subunits'].values[0].split('|')
-    complex_id = row['complex_id'].values[0]
-    pairs = [tuple(sorted(list(t))) for t in itertools.combinations(gene_ids,2)]
-    pairs_set = set(pairs)
-    funmap_pairs = pairs_set & funmap
-    bioplex_pairs = pairs_set & bioplex
-    assert not(len(funmap_pairs) == 0 and len(bioplex_pairs) == 0)
-    sources = ['corum' for i in range(len(pairs))]
-    for pair in funmap_pairs:
-        sources[pairs.index(pair)] = 'funmap'
-    for pair in bioplex_pairs:
-        if sources[pairs.index(pair)] == 'corum':
-            sources[pairs.index(pair)] = 'bioplex'
-        else:
-            sources[pairs.index(pair)] = 'bioplex_funmap'
-
-    pairs_names = [(t[0] + '_' + str(complex_id), t[1] + '_' + str(complex_id)) for t in pairs]
-    symbols = [(symbol_dict[gene_id] if gene_id in symbol_dict else gene_id) for gene_id in gene_ids]
-    names = [gene_id + '_' + str(complex_id) for gene_id in gene_ids]
-    nodes = names
-    edges = pairs_names
-    source_attr = sources
-
-    g = igraph.Graph()
-    g.add_vertices(nodes)
-    g.add_edges(edges)
-    g.es['origin'] = source_attr
-    g.vs['symbols'] = symbols
-    return complex_name, g
-
-
-def create_igraph_for_one_bioplex_complex(bioplex_data, bioplex, funmap, corum, symbol_dict):
-    # only one row
-    assert bioplex_data.shape[0] == 1
-    row = bioplex_data.iloc[[0], :]
-    # complexid  is the same as community id
-    complex_id = row['ComplexID'].values[0]
-    gene_ids = row['gene_ids'].values[0].split('|')
-    pairs = [tuple(sorted(list(t))) for t in itertools.combinations(gene_ids,2)]
-    bioplex_pairs = set(pairs) & bioplex
-    bioplex_pairs_list = list(bioplex_pairs)
-    funmap_pairs = bioplex_pairs & funmap
-    corum_pairs = bioplex_pairs & corum
-    print(len(funmap_pairs))
-    print(len(corum_pairs))
-    assert not(len(funmap_pairs) == 0 and len(corum_pairs) == 0)
-    sources = ['bioplex' for _ in range(len(bioplex_pairs_list))]
-    for pair in funmap_pairs:
-        sources[bioplex_pairs_list.index(pair)] = 'funmap'
-
-    pairs_names = [(t[0] + '_' + str(complex_id), t[1] + '_' + str(complex_id)) for t in bioplex_pairs_list]
-    symbols = [(symbol_dict[gene_id] if gene_id in symbol_dict else gene_id) for gene_id in gene_ids]
-    names = [gene_id + '_' + str(complex_id) for gene_id in gene_ids]
-    nodes = names
-    edges = pairs_names
-    source_attr = sources
-
-    g = igraph.Graph()
-    g.add_vertices(nodes)
-    g.add_edges(edges)
-    g.es['origin'] = source_attr
-    g.vs['symbols'] = symbols
-    return complex_id, g
+    plt.figure(figsize=(15,15))
+    v = venn3(subsets=set_data, set_labels=new_labels)
+    c = venn3_circles(subsets=set_data, linestyle='solid', linewidth=1, color='black')
+    ratio_1 = (set_data[2] + set_data[6]) / set_a_sum * 100
+    # round to 2 decimal places
+    ratio_1 = round(ratio_1, 2)
+    text_1 = f'({set_data[2]}+{set_data[6]})/{set_a_sum}={ratio_1}%'
+    plt.annotate(text_1, xy=v.get_label_by_id('110').get_position() - np.array([0, 0.05]), xytext=(-250,-500),
+                ha='center', textcoords='offset points', bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=-0.5',color='gray'))
+    ratio_2 = (set_data[5] + set_data[6]) / set_c_sum * 100
+    # round to 2 decimal places
+    ratio_2 = round(ratio_2, 2)
+    text_2 = f'({set_data[5]}+{set_data[6]})/{set_c_sum}={ratio_2}%'
+    plt.annotate(text_2, xy=v.get_label_by_id('011').get_position() - np.array([-0.05, -0.02]), xytext=(200,-500),
+                ha='center', textcoords='offset points', bbox=dict(boxstyle='round,pad=0.5', fc='gray', alpha=0.1),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0.5',color='gray'))
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
 
 
 def plot_ice_modules(network_edge_list, ice_module_file, base_url, style, output_file):
     p4c.networks.delete_all_networks(base_url=base_url)
     g = igraph.Graph.Read_Ncol(network_edge_list, directed=False)
     print(g.summary())
-    clusters = g.clusters(mode='weak')
+    clusters = g.connected_components(mode='weak')
     nclusters = len(clusters)
     print(f'number of conneted components: {nclusters}')
     edge_tuples = []
@@ -761,7 +674,7 @@ def plot_ice_modules(network_edge_list, ice_module_file, base_url, style, output
     for v in g.vs:
         g.vs.select(name=v['name'])['clique_id'] = gene_clique_mapping[v['name']]
     print(g.summary())
-    clusters = g.clusters(mode='weak')
+    clusters = g.connected_components(mode='weak')
     nclusters = len(clusters)
     print(f'number of conneted components: {nclusters}')
     network = p4c.networks.create_network_from_igraph(g, title='plot_funmap_ice_module', base_url=base_url)
@@ -777,6 +690,7 @@ def plot_ice_modules(network_edge_list, ice_module_file, base_url, style, output
     print('setting visual style')
     p4c.styles.set_visual_style(style_name, network=network, base_url=base_url)
     print('exporting image ...')
+    p4c.network_views.fit_content(network=network, base_url=base_url)
     p4c.network_views.export_image(filename=output_file, type='PDF', overwrite_file=True, base_url=base_url)
     print('saving session ...')
     # saving seems to be working only with absolute path
@@ -785,7 +699,282 @@ def plot_ice_modules(network_edge_list, ice_module_file, base_url, style, output
     p4c.session.save_session(filename=os.path.abspath(cys_out), base_url=base_url)
 
 
+def plot_heatmap(clique_id, funmap_nodes, max_sample, cfg_file, data_dir, out_dir):
+    with open(cfg_file, 'r') as fh:
+        cfg_dict = yaml.load(fh, Loader=yaml.FullLoader)
+
+    data_files = cfg_dict['data_files']
+    # only plot the one with highest pair wise correlation
+    max_avg_corr = -1
+
+    # save the corr matrix
+    corr_res = {}
+    for item in data_files:
+        cur_name = item['name']
+        cur_path = item['path']
+        cur_data = pd.read_csv(os.path.join(data_dir, cur_path), sep='\t')
+        selected = cur_data[cur_data[cur_data.columns[0]].isin(funmap_nodes)].copy()
+        # continue if not all nodes are found
+        if selected.shape[0] != len(funmap_nodes):
+            continue
+        print(selected.shape)
+        selected.sort_values(by=selected.columns[0], inplace=True)
+        selected.set_index(selected.columns[0], inplace=True)
+        selected_t = selected.T
+        cc = selected_t.corr().values
+        n = cc.shape[0]
+        cc_avg = (cc.sum() - n) / (n * (n - 1))
+        corr_res[cur_name] = cc_avg
+        if cc_avg > max_avg_corr:
+            selected_data_file = cur_name
+            max_avg_corr = cc_avg
+        print(f'{cur_name}: {cc_avg}')
+    gc.collect()
+    corr_df = pd.DataFrame.from_dict(corr_res, orient='index', columns=['avg_corr'])
+    corr_df.to_csv(os.path.join(out_dir, f'clique_{clique_id}_avg_corr.tsv'), sep='\t')
+    print(f'clique {clique_id}: max avg corr: {selected_data_file}')
+
+    for item in data_files:
+        cur_name = item['name']
+        cur_path = item['path']
+        with open(os.path.join(data_dir, cur_path), 'r') as f:
+            cur_data = pd.read_csv(f, sep='\t')
+        selected = cur_data[cur_data[cur_data.columns[0]].isin(funmap_nodes)].copy()
+        print(selected.shape)
+        if selected.shape[0] != len(funmap_nodes):
+            del cur_data, selected
+            gc.collect()
+            continue
+        selected.sort_values(by=selected.columns[0], inplace=True)
+        selected.set_index(selected.columns[0], inplace=True)
+        # continue if not all nodes are found
+        if selected.shape[1] > max_sample:
+            del cur_data, selected
+            gc.collect()
+            continue
+        selected_t = selected.T
+        selected_z = ((selected_t - selected_t.mean())/selected_t.std()).T
+        # sort column by mean
+        selected_z_sorted = selected_z.reindex(selected_z.mean().sort_values().index, axis=1)
+        fig, ax = plt.subplots(figsize=(15, 6))
+        heatmap = sns.heatmap(selected_z_sorted, linewidth=0.5, cmap='RdBu_r',
+                    ax=ax, vmin=-3, vmax=3)
+        cbar = ax.collections[0].colorbar
+        cbar.set_ticks([-3, -2, -1, 0, 1, 2, 3])
+        ax.set_title(cur_name)
+        ax.set_ylabel('')
+        ax.tick_params(left=False, bottom=False)
+        ax.xaxis.set_visible(False)
+        fig.tight_layout()
+
+        file_name = make_valid_filename(cur_name)
+        fig.savefig(os.path.join('.', os.path.join(out_dir, f'clique_{clique_id}_heatmap_{file_name}.pdf')))
+        fig.clf()
+        heatmap.figure.clf()
+        plt.clf()
+        plt.close('all')
+        del cur_data, selected, heatmap, fig, ax, cbar, selected_t, selected_z, selected_z_sorted
+        gc.collect()
+
+
+def plot_ice_corum_overlap(enrich_results_file, default_style, base_url, output_dir,
+                        config_file, data_file,
+                        heatmap_max_size=10, heatmap_max_sample=1000):
+    data_dir = './funmap_data'
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    with tarfile.open(data_file, "r:gz") as tar:
+        for member in tar.getmembers():
+            member.name = os.path.basename(member.name)
+            if member.isfile():
+                tar.extract(member, path=data_dir)
+
+    p4c.networks.delete_all_networks(base_url=base_url)
+    p4c.styles.delete_all_visual_styles(base_url=base_url)
+    # read the enrich results
+    enrich_results = pd.read_csv(enrich_results_file, sep='\t', na_filter=False)
+    # iterate over the rows
+    for _, row in enrich_results.iterrows():
+        clique_id = row['clique_id']
+        print(f'plotting clique {clique_id} ...')
+        # get the clique_list column
+        funmap_nodes = row['clique_list']
+        # split into a set of nodes, separated by ;
+        funmap_nodes = set(funmap_nodes.split(';'))
+        # get the corum_geneSet column
+        corum_genes = row['corum_geneSet']
+        print(corum_genes)
+        if corum_genes == 'NA':
+            corum_nodes = set()
+        else:
+            # get corum_complex_list column and split into a set of nodes, separated by ;
+            corum_nodes = row['corum_complex_list']
+            corum_nodes = set(corum_nodes.split(';'))
+
+        all_nodes = list(funmap_nodes | corum_nodes)
+        funmap_edges = set(tuple(sorted(list(t))) for t in itertools.combinations(funmap_nodes,2))
+        if len(corum_nodes) > 0:
+            corum_edges = set(tuple(sorted(list(t))) for t in itertools.combinations(corum_nodes,2))
+        else:
+            corum_edges = set()
+        all_edges = list(funmap_edges | corum_edges)
+        all_nodes_type = []
+        for i in all_nodes:
+            if i in funmap_nodes and i in corum_nodes:
+                node_type = '3'
+            elif i in funmap_nodes:
+                node_type = '1'
+            elif i in corum_nodes:
+                node_type = '2'
+            all_nodes_type.append(node_type)
+        node_is_in_funmap = []
+        for i in all_nodes:
+            if i in funmap_nodes:
+                node_in_funmap = '1'
+            else:
+                node_in_funmap = '0'
+            node_is_in_funmap.append(node_in_funmap)
+        all_edges_type = []
+        for i in all_edges:
+            if i in funmap_edges and i in corum_edges:
+                edge_type = '3'
+            elif i in funmap_edges:
+                edge_type = '1'
+            elif i in corum_edges:
+                edge_type = '2'
+            all_edges_type.append(edge_type)
+        edge_is_in_funmap = []
+        for i in all_edges:
+            if i in funmap_edges:
+                edge_in_funmap = '1'
+            else:
+                edge_in_funmap = '0'
+            edge_is_in_funmap.append(edge_in_funmap)
+
+        g = igraph.Graph()
+        g.add_vertices(all_nodes)
+        g.add_edges(all_edges)
+        g.vs['node_type'] = all_nodes_type
+        g.vs['node_in_funmap'] = node_is_in_funmap
+        g.es['edge_type'] = all_edges_type
+        g.es['edge_in_funmap'] = edge_is_in_funmap
+        g.vs['symbols'] = all_nodes
+
+        network = p4c.networks.create_network_from_igraph(g, title=f'clique_{clique_id}', base_url=base_url)
+        node_label = p4c.style_mappings.map_visual_property('node label', 'symbols', 'p', base_url=base_url)
+        node_type = p4c.style_mappings.map_visual_property('node fill color',
+                    'node_type', 'd', ['1', '2', '3'],
+                    ['#e78ac3', '#00aeef', '#a29def'], base_url=base_url)
+        edge_color = p4c.style_mappings.map_visual_property('edge stroke unselected paint',
+                    'edge_type', 'd', ['1', '2', '3'],
+                    ['#e78ac3', '#00aeef', '#a29def'], base_url=base_url)
+        edge_line_style = p4c.style_mappings.map_visual_property('edge line type',
+                    'edge_in_funmap', 'd', ['0', '1'],
+                    ['LONG_DASH', 'SOLID'], base_url=base_url)
+        style_name = 'my_style'
+        p4c.styles.create_visual_style(style_name,
+                    defaults=default_style,
+                    mappings=[node_label, node_type, edge_color, edge_line_style], base_url=base_url)
+        p4c.py4cytoscape_tuning.CATCHUP_NETWORK_TIMEOUT_SECS = 600
+        p4c.layouts.layout_network(layout_name='force-directed', network=network, base_url=base_url)
+        p4c.styles.set_visual_style(style_name, network=network, base_url=base_url)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_pdf = os.path.join(output_dir, f'clique_{clique_id}.pdf')
+        p4c.network_views.fit_content(network=network, base_url=base_url)
+        p4c.network_views.export_image(filename=output_pdf, type='PDF', overwrite_file=True, base_url=base_url)
+
+        if len(funmap_nodes) <= heatmap_max_size:
+            plot_heatmap(clique_id, funmap_nodes, heatmap_max_sample, config_file, data_dir, output_dir)
+
+    output_cys = os.path.join(output_dir, f'ice_corum_overlap.cys')
+    p4c.session.save_session(filename=os.path.abspath(output_cys), base_url=base_url)
+
+
+def plot_pie_chart(results_file, output_file):
+    # read tsv file
+    results = pd.read_csv(results_file, sep='\t')
+    # get the count of the column 'clique_class'
+    counts = results['clique_class'].value_counts()
+    counts = pd.DataFrame(counts)
+    counts = counts.sort_index()
+    # two number for the first pie chart
+    pie1_1 = counts.iloc[0].values[0]
+    # sum the counts of class 2, 3, 4 (index)
+    pie1_2 = counts.iloc[1:].sum().values[0]
+
+    pie2_1 = counts.iloc[1].values[0]
+    pie2_2 = counts.iloc[2:].sum().values[0]
+
+    pie3_1 = counts.iloc[2].values[0]
+    pie3_2 = counts.iloc[3].values[0]
+
+    print(pie1_1, pie1_2, pie2_1, pie2_2, pie3_1, pie3_2)
+
+    # make figure and assign axis objects
+    fig = plt.figure(figsize=(15, 4))
+    ax1 = fig.add_subplot(131)
+    ax2 = fig.add_subplot(132)
+    ax3 = fig.add_subplot(133)
+    fig.subplots_adjust(wspace=0)
+
+    # large pie chart parameters
+    ratio_11 = pie1_1 / (pie1_1 + pie1_2)
+    ratio_12 = pie1_2 / (pie1_1 + pie1_2)
+    ratios = [ratio_12, ratio_11]
+    labels = ['', '']
+    explode = [0.1, 0]
+    # rotate so that first wedge is split by the x-axis
+    angle = -180 * ratios[0]
+
+    def autopct_format(values):
+        def my_format(pct):
+            total = sum(values)
+            val = int(round(pct*total/100))
+            return '{v:d}'.format(v=val)
+        return my_format
+
+    ax1.pie(ratios, autopct=autopct_format([pie1_1, pie1_2]), startangle=angle,
+            labels=labels, colors=['#6d6e71', '#46bdf2'], explode=explode)
+
+    # small pie chart parameters
+    ratio_21 = pie2_1 / (pie2_1 + pie2_2)
+    ratio_22 = pie2_2 / (pie2_1 + pie2_2)
+    ratios = [ratio_21, ratio_22]
+    labels = ['', '']
+    # width = .2
+    angle = -180 * ratios[1]
+    radius = np.sqrt((pie2_1 + pie2_2) / (pie1_1 + pie1_2))
+    ax2.pie(ratios, autopct=autopct_format([pie2_1, pie2_2]), startangle=angle,
+            labels=labels, radius=radius, colors=['#84daff','#929497'],
+            explode=explode, textprops={'size': 'smaller'})
+
+    ax1.set_title('CORUM')
+    ax2.set_title('BioPlex')
+    # for now, no connection between pie charts
+    # https://stackoverflow.com/a/72551175
+
+    # small pie chart parameters
+    ratio_31 = pie3_1 / (pie3_1 + pie3_2)
+    ratio_32 = pie3_2 / (pie3_1 + pie3_2)
+    ratios = [ratio_32, ratio_31]
+    labels = ['', '']
+    angle = -180 * ratios[0]
+    radius = np.sqrt((pie3_1 + pie3_2) / (pie1_1 + pie1_2))
+    ax3.pie(ratios, autopct=autopct_format([pie3_1, pie3_2]), startangle=angle,
+            labels=labels, radius=radius, colors=['#d0d2d3', '#d3f3ff'],
+            explode=explode, textprops={'size': 'smaller'})
+
+    ax1.set_title('CORUM')
+    ax2.set_title('BioPlex')
+    ax3.set_title('GO')
+
+    fig.tight_layout()
+    plt.savefig(output_file, bbox_inches='tight')
+
+
 if __name__ == '__main__':
+    args = arg_parse()
     print('checking cytoscape connection')
     base_url = 'http://127.0.0.1:1234/v1'
     corum_file = 'allComplexes.txt'
@@ -797,11 +986,13 @@ if __name__ == '__main__':
     out_dir = '.'
     id_mapping = None
 
+    plot_pie_chart(args.enrich_results_file, os.path.join(out_dir, 'plot_enrichment_pie_chart.pdf'))
+
     print(p4c.cytoscape_ping(base_url=base_url))
     print(p4c.cytoscape_version_info(base_url=base_url))
     p4c.networks.delete_all_networks(base_url=base_url)
+    p4c.styles.delete_all_visual_styles(base_url=base_url)
 
-    args = arg_parse()
     g_name = 'plot_bioplex_corum_funmap'
     funmap_output_pdf = os.path.join(out_dir, f'{g_name}_network.pdf')
     funmap_output_cys = os.path.join(out_dir, f'{g_name}_network.cys')
@@ -934,10 +1125,7 @@ if __name__ == '__main__':
     g.vs['complex_id'] = corum_ids
     g.vs['symbols'] = symbols
 
-    # cy_session = p4c.session.open_session(base_url=base_url)
-    # print('cy session opened')
     network = p4c.networks.create_network_from_igraph(g, title=g_name, base_url=base_url)
-    # covert corum_style to cytoscape style
     default_style = {
         'COMPOUND_NODE_PADDING': 10,
         'COMPOUND_NODE_SHAPE': 'ROUND_RECTANGLE',
@@ -964,6 +1152,7 @@ if __name__ == '__main__':
     p4c.layouts.layout_network(layout_name='force-directed', network=network, base_url=base_url)
     p4c.styles.set_visual_style(style_name, network=network, base_url=base_url)
     print('exporting image ...')
+    p4c.network_views.fit_content(network=network, base_url=base_url)
     p4c.network_views.export_image(filename=funmap_output_pdf, type='PDF', overwrite_file=True, base_url=base_url)
     print('saving session ...')
     # saving seems to be working only with absolute path
@@ -991,18 +1180,21 @@ if __name__ == '__main__':
     bioplex_edge_set = set(tuple(sorted([t[0].upper(), t[1].upper()])) for t in bioplex_edge_list)
 
     sets = [funmap_edge_set, corum_edge_set, bioplex_edge_set]
-    n_ab = len(funmap_edge_set & corum_edge_set)
-    n_ac = len(funmap_edge_set & bioplex_edge_set)
-    n_bc = len(corum_edge_set & bioplex_edge_set)
-    n_abc = len(funmap_edge_set & corum_edge_set & bioplex_edge_set)
-    n_a = len(funmap_edge_set) - n_ab - n_ac + n_abc
-    n_b = len(corum_edge_set) - n_ab - n_bc + n_abc
-    n_c = len(bioplex_edge_set) - n_ac - n_bc + n_abc
+    n_Abc = len(funmap_edge_set - corum_edge_set - bioplex_edge_set)
+    n_aBc = len(corum_edge_set - funmap_edge_set - bioplex_edge_set)
+    n_ABc = len(funmap_edge_set & corum_edge_set - bioplex_edge_set)
+    n_abC = len(bioplex_edge_set - funmap_edge_set - corum_edge_set)
+    n_AbC = len(funmap_edge_set & bioplex_edge_set -corum_edge_set)
+    n_aBC = len(corum_edge_set & bioplex_edge_set - funmap_edge_set)
+    n_ABC = len(funmap_edge_set & corum_edge_set & bioplex_edge_set)
     # for plotting, the numbers have different meaning
-    print('n_a, n_b, n_c, n_ab, n_ac, n_bc, n_abc')
-    print(n_a, n_b, n_c, n_ab - n_abc, n_ac - n_abc, n_bc - n_abc, n_abc)
-    print(n_ab/len(funmap_edge_set), n_bc/len(bioplex_edge_set))
+    print('n_Abc', 'n_aBc', 'n_ABc', 'n_abC', 'n_AbC', 'n_aBC', 'n_ABC')
+    print(n_Abc, n_aBc, n_ABc, n_abC, n_AbC, n_aBC, n_ABC)
+    print((n_ABc+n_ABC)/len(funmap_edge_set), (n_aBC+n_ABC)/len(bioplex_edge_set))
     print(len(funmap_edge_set), len(corum_edge_set), len(bioplex_edge_set))
+    # plot venn diagram
+    set_data = (n_Abc, n_aBc, n_ABc, n_abC, n_AbC, n_aBC, n_ABC)
+    plot_venn(set_data, labels=('FunMap', 'CORUM', 'BioPlex'), filename='plot_funmap_corum_bioplex_venn.pdf')
 
     # plot comparions of funmap and bioplex ppis
     fig_data_file = 'plot_funmap_bioplex_dot_plot_data.tsv'
@@ -1183,3 +1375,9 @@ if __name__ == '__main__':
 
     plot_ice_modules(args.input_network_symbol, args.ice_module_file,
                     base_url, default_style, 'plot_funmap_ice_modules.pdf')
+
+    # note: if there are many cliques, this could take a while
+    plot_ice_corum_overlap(args.enrich_results_file, default_style,
+                        base_url, './ice_corum_overlap',
+                        args.funmap_config_file,
+                        args.data_file)

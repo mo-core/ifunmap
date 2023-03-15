@@ -68,7 +68,10 @@ workflow IFUNMAP {
 
     FUNMAP_VIZ (
         FUNMAP.out.funmap_el,
-        ICE.out.ice_results
+        ICE.out.ice_results,
+        CLIQUE_ENRICH.out.clique_enrich_results,
+        INPUT_CHECK.out.config_file,
+        ch_data
     )
     ch_versions = ch_versions.mix(FUNMAP_VIZ.out.versions)
 

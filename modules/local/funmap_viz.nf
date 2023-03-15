@@ -8,11 +8,15 @@ process FUNMAP_VIZ {
     input:
     path funmap_el
     path ice_results
+    path ice_enrich_results
+    path funmap_config
+    path funmap_input_data
 
     output:
     path 'plot_*.tsv', emit: tsv_results
     path 'plot_*.pdf', emit: pdf_results
     path 'plot_*.cys', emit: cys_results
+    path 'ice_corum_overlap', emit: ice_corum_overlap
     path 'versions.yml', emit: versions
 
     when:
@@ -24,7 +28,7 @@ process FUNMAP_VIZ {
     wget "https://drive.google.com/uc?id=1eI4Rl167-VNv7KjsUMmjcP--lSxCoAp2&export=download" -O input.tar.gz
     tar -xzf input.tar.gz
     rm -rf input.tar.gz
-    funmap_viz.py -s ${funmap_el} -i ${ice_results}
+    funmap_viz.py -s ${funmap_el} -i ${ice_results} -e ${ice_enrich_results} -c ${funmap_config} -d ${funmap_input_data}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
        cytoscape: 3.9.1
