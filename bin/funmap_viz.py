@@ -919,9 +919,12 @@ def plot_ice_corum_overlap(enrich_results_file, default_style, base_url, output_
 
         if len(funmap_nodes) <= heatmap_max_size:
             heatmap_files = plot_heatmap(clique_id, funmap_nodes, heatmap_max_sample, config_file, data_dir, output_dir)
-            all_pdfs = [pdf_name] + heatmap_files
-            merge_and_delete(output_dir, all_pdfs, f'clique_{clique_id}_all.pdf')
-            os.rename(os.path.join(output_dir, f'clique_{clique_id}_all.pdf'), os.path.join(output_dir, pdf_name))
+        else:
+            heatmap_files = []
+
+        all_pdfs = [pdf_name] + heatmap_files
+        merge_and_delete(output_dir, all_pdfs, f'clique_{clique_id}_all.pdf')
+        os.rename(os.path.join(output_dir, f'clique_{clique_id}_all.pdf'), os.path.join(output_dir, pdf_name))
 
     output_cys = os.path.join(output_dir, f'ice_corum_overlap.cys')
     p4c.session.save_session(filename=os.path.abspath(output_cys), base_url=base_url)
