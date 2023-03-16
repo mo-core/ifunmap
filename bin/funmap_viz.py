@@ -20,6 +20,7 @@ import py4cytoscape as p4c
 from matplotlib_venn import venn3, venn3_circles, venn3_unweighted
 import networkx as nx
 import seaborn as sns
+import pypdf
 
 
 mpl.rcParams['pdf.fonttype'] = 42  # TrueType fonts for ease of editing in illustrator
@@ -27,6 +28,33 @@ mpl.rcParams['font.family'] = 'Arial'
 mpl.rcParams['font.size'] = 24
 mpl.rcParams['savefig.dpi'] = 600
 mpl.use('Agg')
+
+
+def merge_and_delete(fig_dir, file_list, output_file):
+    """
+    Merge multiple PDF files into one and delete the original files.
+    """
+    pdf_writer = pypdf.PdfWriter()
+
+    total_page_num = 0
+    for file in file_list:
+        pdf_reader = pypdf.PdfReader(os.path.join(fig_dir, file))
+        cur_page_num = len(pdf_reader.pages)
+        for page in range(cur_page_num):
+            pdf_writer.add_page(pdf_reader.pages[page])
+        pdf_writer.add_outline_item(os.path.splitext(file)[0], total_page_num)
+        total_page_num = total_page_num + cur_page_num
+
+    with open(os.path.join(fig_dir, output_file), 'wb') as fh:
+        pdf_writer.write(fh)
+        print('figures have been merged.')
+
+    for filename in file_list:
+        try:
+            os.remove(os.path.join(fig_dir, filename))
+        except:
+            print(f'{filename} could not be deleted.')
+
 
 def make_valid_filename(filename):
     # remove any invalid characters from the filename
@@ -734,6 +762,7 @@ def plot_heatmap(clique_id, funmap_nodes, max_sample, cfg_file, data_dir, out_di
     corr_df.to_csv(os.path.join(out_dir, f'clique_{clique_id}_avg_corr.tsv'), sep='\t')
     print(f'clique {clique_id}: max avg corr: {selected_data_file}')
 
+    plot_file_names = []
     for item in data_files:
         cur_name = item['name']
         cur_path = item['path']
@@ -768,13 +797,17 @@ def plot_heatmap(clique_id, funmap_nodes, max_sample, cfg_file, data_dir, out_di
         fig.tight_layout()
 
         file_name = make_valid_filename(cur_name)
-        fig.savefig(os.path.join('.', os.path.join(out_dir, f'clique_{clique_id}_heatmap_{file_name}.pdf')))
+        cur_file_name = f'clique_{clique_id}_heatmap_{file_name}.pdf'
+        fig.savefig(os.path.join('.', os.path.join(out_dir, cur_file_name)))
+        plot_file_names.append(cur_file_name)
         fig.clf()
         heatmap.figure.clf()
         plt.clf()
         plt.close('all')
         del cur_data, selected, heatmap, fig, ax, cbar, selected_t, selected_z, selected_z_sorted
         gc.collect()
+
+    return plot_file_names
 
 
 def plot_ice_corum_overlap(enrich_results_file, default_style, base_url, output_dir,
@@ -880,12 +913,15 @@ def plot_ice_corum_overlap(enrich_results_file, default_style, base_url, output_
         p4c.styles.set_visual_style(style_name, network=network, base_url=base_url)
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        output_pdf = os.path.join(output_dir, f'clique_{clique_id}.pdf')
+        pdf_name = f'clique_{clique_id}.pdf'
         p4c.network_views.fit_content(network=network, base_url=base_url)
-        p4c.network_views.export_image(filename=output_pdf, type='PDF', overwrite_file=True, base_url=base_url)
+        p4c.network_views.export_image(filename=os.path.join(output_dir, pdf_name), type='PDF', overwrite_file=True, base_url=base_url)
 
         if len(funmap_nodes) <= heatmap_max_size:
-            plot_heatmap(clique_id, funmap_nodes, heatmap_max_sample, config_file, data_dir, output_dir)
+            heatmap_files = plot_heatmap(clique_id, funmap_nodes, heatmap_max_sample, config_file, data_dir, output_dir)
+            all_pdfs = [pdf_name] + heatmap_files
+            merge_and_delete(output_dir, all_pdfs, f'clique_{clique_id}_all.pdf')
+            os.rename(os.path.join(output_dir, f'clique_{clique_id}_all.pdf'), os.path.join(output_dir, pdf_name))
 
     output_cys = os.path.join(output_dir, f'ice_corum_overlap.cys')
     p4c.session.save_session(filename=os.path.abspath(output_cys), base_url=base_url)
