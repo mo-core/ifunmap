@@ -34,4 +34,15 @@ process FUNMAP_VIZ {
        cytoscape: 3.9.1
     END_VERSIONS
     """
+
+    stub:
+    """
+    wget "https://drive.google.com/uc?id=1r-FkW9crmu3_i1U7OF-MjUaDSxo9IZ5U&export=download&confirm=9iBg" -O vis_results.tgz
+    tar -xzf vis_results.tgz
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+       cytoscape: 3.9.1
+    END_VERSIONS
+    """
+
 }

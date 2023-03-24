@@ -45,6 +45,24 @@
             },
             "required": ["config_file", "data_file"]
         },
+        "network_module_analysis": {
+            "title": "Network module analysis",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "min_module_size": {
+                    "type": "integer",
+                    "default": 20,
+                    "description": "minimum NetSAM module size"
+                },
+                "module_enrich_top_n": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "number of top enriched pathways to output"
+                }
+            }
+        },
         "ice": {
             "title": "ICE",
             "type": "object",
@@ -230,6 +248,9 @@
         },
         {
             "$ref": "#/definitions/funmap"
+        },
+        {
+            "$ref": "#/definitions/network_module_analysis"
         },
         {
             "$ref": "#/definitions/ice"

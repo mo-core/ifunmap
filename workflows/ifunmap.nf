@@ -30,6 +30,7 @@ include { FUNMAP } from '../modules/local/funmap'
 include { ICE } from '../modules/local/ice'
 include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
 include { FUNMAP_VIZ } from '../modules/local/funmap_viz'
+include {NETWORK_ANALYSIS} from '../modules/local/network_analysis'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,6 +66,11 @@ workflow IFUNMAP {
         ICE.out.ice_results
     )
     ch_versions = ch_versions.mix(CLIQUE_ENRICH.out.versions)
+
+    NETWORK_ANALYSIS (
+        FUNMAP.out.funmap_el
+    )
+    ch_versions = ch_versions.mix(NETWORK_ANALYSIS.out.versions)
 
     FUNMAP_VIZ (
         FUNMAP.out.funmap_el,
