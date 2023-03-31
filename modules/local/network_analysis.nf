@@ -24,4 +24,14 @@ process NETWORK_ANALYSIS {
        NetSAM: 1.39.1
     END_VERSIONS
     """
+
+    stub:
+    """
+    wget "https://drive.google.com/uc?id=1oFv2_SNdUoW383gamrdkdwVcDQBHQhah&export=download&confirm=9iBg" -O network_analysis_results.tgz
+    tar -xzf network_analysis_results.tgz
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+      NetSAM: 1.39.1
+    END_VERSIONS
+    """
 }
