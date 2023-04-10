@@ -76,6 +76,25 @@
                 }
             }
         },
+        "module_activity_analysis": {
+            "title": "Module activity analysis",
+            "type": "object",
+            "description": "",
+            "default": "",
+            "properties": {
+                "tsi": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "sample meta data in TSI format"
+                },
+                "module_activity_dataset_name": {
+                    "type": "string",
+                    "default": "None",
+                    "help_text": "The name must match one of the names listed in the data_files section of the YML file",
+                    "description": "the name of the dataset to use for module activity analysis"
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -254,6 +273,9 @@
         },
         {
             "$ref": "#/definitions/ice"
+        },
+        {
+            "$ref": "#/definitions/module_activity_analysis"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

@@ -9,6 +9,7 @@ process NETWORK_ANALYSIS {
 
     output:
     path 'out/*', emit: network_analysis_out
+    path 'out/*.nsm', emit: netsam_nsm
     path 'versions.yml', emit: versions
 
     when:
