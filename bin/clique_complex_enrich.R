@@ -88,11 +88,10 @@ combined_network_vertices <- V(combined_network)$name
 
 for (i in seq_len(length(clique_db))) {
     print(paste0("Processing clique ", i, " of ", length(clique_db)))
-    clique_id <- i
-
     # for each clique, find out what percentage of the edges
     # are covered by any of the interaction databases: BioPlex, BioGrid, HI-Union
-    clique_genes <- clique_db[[i]]
+    clique_id <- clique_db[[i]][1]
+    clique_genes <- clique_db[[i]][-1]
     clique_genes_ensembl_id <- unname(symbol_to_id[clique_genes])
     clique_size <- length(clique_genes)
     common_id <- intersect(clique_genes_ensembl_id, combined_network_vertices)
@@ -100,7 +99,7 @@ for (i in seq_len(length(clique_db))) {
     sub_g_edges <- gsize(sub_g)
     coverage <- sub_g_edges / (clique_size * (clique_size - 1) / 2.0)
     cur_res <- tibble(clique_id = clique_id,
-        clique_list = paste(clique_db[[i]], collapse = ";"),
+        clique_list = paste(clique_genes, collapse = ";"),
         clique_size = clique_size,
         clique_coverage_perc = coverage
     )
@@ -112,7 +111,7 @@ for (i in seq_len(length(clique_db))) {
       organism = "hsapiens",
       enrichDatabaseFile = corum_gmt_file,
       enrichDatabaseType = "genesymbol",
-      interestGene = clique_db[[i]],
+      interestGene = clique_db[[i]][-1],
       interestGeneType = "genesymbol",
       referenceGene = ref_genes,
       referenceGeneType = "genesymbol",
@@ -163,7 +162,7 @@ for (i in seq_len(length(clique_db))) {
              organism = "hsapiens",
              enrichDatabaseFile = bioplex_gmt_file,
              enrichDatabaseType = "genesymbol",
-             interestGene = clique_db[[i]],
+             interestGene = clique_db[[i]][-1],
              interestGeneType = "genesymbol",
              referenceGene = ref_genes,
              referenceGeneType = "genesymbol",
@@ -215,7 +214,7 @@ for (i in seq_len(length(clique_db))) {
       organism = "hsapiens",
       enrichDatabase = "geneontology_Biological_Process",
       enrichDatabaseType = "genesymbol",
-      interestGene = clique_db[[i]],
+      interestGene = clique_db[[i]][-1],
       interestGeneType = "genesymbol",
       referenceGene = ref_genes,
       referenceGeneType = "genesymbol",
@@ -254,7 +253,7 @@ for (i in seq_len(length(clique_db))) {
           organism = "hsapiens",
           enrichDatabase = "geneontology_Molecular_Function",
           enrichDatabaseType = "genesymbol",
-          interestGene = clique_db[[i]],
+          interestGene = clique_db[[i]][-1],
           interestGeneType = "genesymbol",
           referenceGene = ref_genes,
           referenceGeneType = "genesymbol",
@@ -292,7 +291,7 @@ for (i in seq_len(length(clique_db))) {
           organism = "hsapiens",
           enrichDatabase = "geneontology_Cellular_Component",
           enrichDatabaseType = "genesymbol",
-          interestGene = clique_db[[i]],
+          interestGene = clique_db[[i]][-1],
           interestGeneType = "genesymbol",
           referenceGene = ref_genes,
           referenceGeneType = "genesymbol",

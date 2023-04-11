@@ -29,7 +29,7 @@ include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoft
 include { FUNMAP } from '../modules/local/funmap'
 include { ICE } from '../modules/local/ice'
 include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
-include { FUNMAP_VIZ } from '../modules/local/funmap_viz'
+include { CLIQUE_VIZ } from '../modules/local/clique_viz'
 include { NETWORK_ANALYSIS } from '../modules/local/network_analysis'
 include { MODULE_ACTIVITY} from '../modules/local/module_activity'
 
@@ -73,14 +73,14 @@ workflow IFUNMAP {
     )
     ch_versions = ch_versions.mix(NETWORK_ANALYSIS.out.versions)
 
-    FUNMAP_VIZ (
+    CLIQUE_VIZ (
         FUNMAP.out.funmap_el,
         ICE.out.ice_results,
         CLIQUE_ENRICH.out.clique_enrich_results,
         INPUT_CHECK.out.config_file,
         ch_data
     )
-    ch_versions = ch_versions.mix(FUNMAP_VIZ.out.versions)
+    ch_versions = ch_versions.mix(CLIQUE_VIZ.out.versions)
 
     if (params.tsi) { ch_tsi = file(params.tsi) } else { ch_tsi = Channel.empty() }
     MODULE_ACTIVITY (

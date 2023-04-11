@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import csv
 import argparse
 import pandas as pd
 import numpy as np
@@ -178,22 +179,26 @@ if __name__ == '__main__':
     args = arg_parse()
     module_dict = {}
     with open(args.ice_clique, 'r') as fh:
-        clique_cnt = 1
         for line in fh:
             line = line.strip()
             if line.startswith('#'):
                 continue
             genes = line.split('\t')
-            module_name = f'clique_{clique_cnt}'
-            module_dict[module_name] = genes
-            clique_cnt += 1
+            # the first element is the module name, the rest are genes
+            module_name = genes[0]
+            module_dict[module_name] = genes[1:]
 
     module_list, _ = get_module_list_from_nsm(args.netsam_nsm)
     for (i, module) in enumerate(module_list):
             module_dict[module['name']] = module['genes']
 
     # save the module dict to npy file
-    np.save('module_dict.npy', module_dict)
+    np.save('module_info.npy', module_dict)
+    with open('module_info.tsv', 'w', newline='') as file:
+        writer = csv.writer(file, delimiter='\t')
+        for key, values in module_dict.items():
+            row = [key] + values
+            writer.writerow(row)
 
     # read the tsi file
     tsi_df = pd.read_csv(args.tsi_file, delimiter='\t', skiprows=[1],

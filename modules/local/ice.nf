@@ -8,7 +8,7 @@ process ICE {
     path funmap_el
 
     output:
-    path '*.tsv', emit: ice_results
+    path 'ice_funmap_*.tsv', emit: ice_results
     path 'versions.yml', emit: versions
 
     when:
@@ -16,7 +16,9 @@ process ICE {
 
     script: // This script is bundled with the pipeline, in mo-core/ifunmap/bin/
     """
-    ice ${funmap_el} ${params.ice_min_sz} > ice_funmap_${params.ice_min_sz}.tsv
+    ice ${funmap_el} ${params.ice_min_sz} > results.tsv
+    # Add clique id to the results
+    awk '{print "C" NR "\t" \$0}' results.tsv > ice_funmap_${params.ice_min_sz}.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
        ice: 0.1.2

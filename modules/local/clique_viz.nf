@@ -1,5 +1,5 @@
-process FUNMAP_VIZ {
-    tag  "${if (workflow.stubRun) 'funmap_viz_stub' else 'funmap_viz'}"
+process CLIQUE_VIZ {
+    tag  "${if (workflow.stubRun) 'clique_viz_stub' else 'clique_viz'}"
     label 'process_medium'
     executor 'local' //visualization will be done on local machine, connect to cytscape server running on local machine
     container 'registry.gitlab.com/bzhanglab/py4cytoscape:1.6.0'
@@ -28,7 +28,7 @@ process FUNMAP_VIZ {
     wget "https://drive.google.com/uc?id=1eI4Rl167-VNv7KjsUMmjcP--lSxCoAp2&export=download" -O input.tar.gz
     tar -xzf input.tar.gz
     rm -rf input.tar.gz
-    funmap_viz.py -s ${funmap_el} -i ${ice_results} -e ${ice_enrich_results} -c ${funmap_config} -d ${funmap_input_data}
+    clique_viz.py -s ${funmap_el} -i ${ice_results} -e ${ice_enrich_results} -c ${funmap_config} -d ${funmap_input_data}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
        cytoscape: 3.9.1
@@ -37,7 +37,7 @@ process FUNMAP_VIZ {
 
     stub:
     """
-    wget "https://drive.google.com/uc?id=1r-FkW9crmu3_i1U7OF-MjUaDSxo9IZ5U&export=download&confirm=9iBg" -O vis_results.tgz
+    wget "https://drive.google.com/uc?id=1T0NUx9PzRS6CqzjNOm5q9Ex6GTwWY3as&export=download&confirm=9iBg" -O vis_results.tgz
     tar -xzf vis_results.tgz
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

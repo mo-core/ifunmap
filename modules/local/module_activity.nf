@@ -13,7 +13,7 @@ process MODULE_ACTIVITY {
 
 
     output:
-    path 'module_dict.npy', emit: module_dict
+    path 'module_info.*', emit: module_info
     path 'module_activity_scores.*', emit: module_activity_scores
     path 'versions.yml', emit: versions
 
@@ -38,11 +38,4 @@ process MODULE_ACTIVITY {
     END_VERSIONS
     """
 
-    // stub:
-    // """
-    // cat <<-END_VERSIONS > versions.yml
-    // "${task.process}":
-    //   python: 3.7.6
-    // END_VERSIONS
-    // """
 }
