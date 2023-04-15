@@ -1,7 +1,7 @@
 process MODULE_ACTIVITY_PREDICTION_VIZ {
     tag  'module_activity_prediction_viz'
     executor 'local'
-    container 'registry.gitlab.com/bzhanglab/python:3.7.6'
+    container 'registry.gitlab.com/bzhanglab/python:3.8.13'
     containerOptions '--net host'
 
     input:
@@ -25,7 +25,7 @@ process MODULE_ACTIVITY_PREDICTION_VIZ {
         --module-info ${module_info}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-       python: 3.7.6
+       python: 3.8.13
     END_VERSIONS
     """
 

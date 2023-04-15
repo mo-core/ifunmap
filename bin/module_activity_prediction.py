@@ -296,8 +296,8 @@ def plot_importance_dotplot(out_dir, importance_file, score_file, threshold_cc, 
     cb = plt.colorbar(sc, shrink=0.2, ax=ax_3)
     cb.outline.set_edgecolor('white')
     cb.ax.set_ylim(0, max_val)
-    cb_locator = ticker.MultipleLocator(base=0.2)  # Set tick locations every 0.2
-    cb.ax.xaxis.set_major_locator(cb_locator)
+    # cb_locator = ticker.MultipleLocator(base=0.2)  # Set tick locations every 0.2
+    # cb.ax.xaxis.set_major_locator(cb_locator)
     L = ax_3.legend(*sc.legend_elements('sizes', num=4), title='feature\nimportance', borderpad=1,
                     labelspacing=1, loc='upper left', frameon=False)
     text_len = len(L.get_texts())

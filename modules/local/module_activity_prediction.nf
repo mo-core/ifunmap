@@ -1,7 +1,7 @@
 process MODULE_ACTIVITY_PREDICTION {
     tag  'module_activity_prediction'
     label 'process_high'
-    container 'registry.gitlab.com/bzhanglab/python:3.7.6'
+    container 'registry.gitlab.com/bzhanglab/python:3.8.13'
 
     input:
     path config_file
@@ -34,7 +34,7 @@ process MODULE_ACTIVITY_PREDICTION {
     rm -rf data.tsv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-       python: 3.7.6
+       python: 3.8.13
     END_VERSIONS
     """
 

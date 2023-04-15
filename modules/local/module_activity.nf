@@ -1,8 +1,7 @@
 process MODULE_ACTIVITY {
-    tag  "${if (workflow.stubRun) 'module_activity_stub' else 'module_activity'}"
+    tag  'module_activity'
     label 'process_high'
-
-    container 'registry.gitlab.com/bzhanglab/python:3.7.6'
+    container 'registry.gitlab.com/bzhanglab/python:3.8.13'
 
     input:
     path ice_clique
@@ -34,7 +33,7 @@ process MODULE_ACTIVITY {
         --tsi-file ${tsi_file}
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-       python: 3.7.6
+       python: 3.8.13
     END_VERSIONS
     """
 
