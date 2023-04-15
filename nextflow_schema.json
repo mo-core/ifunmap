@@ -92,6 +92,11 @@
                     "default": "None",
                     "help_text": "The name must match one of the names listed in the data_files section of the YML file",
                     "description": "the name of the dataset to use for module activity analysis"
+                },
+                "mutation_file": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "mutation data for predicting module activity"
                 }
             }
         },

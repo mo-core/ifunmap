@@ -32,6 +32,8 @@ include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
 include { CLIQUE_VIZ } from '../modules/local/clique_viz'
 include { NETWORK_ANALYSIS } from '../modules/local/network_analysis'
 include { MODULE_ACTIVITY} from '../modules/local/module_activity'
+include { MODULE_ACTIVITY_PREDICTION} from '../modules/local/module_activity_prediction'
+include { MODULE_ACTIVITY_PREDICTION_VIZ} from '../modules/local/module_activity_prediction_viz'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,6 +93,23 @@ workflow IFUNMAP {
         ch_tsi
     )
     ch_versions = ch_versions.mix(MODULE_ACTIVITY.out.versions)
+
+    if (params.mutation_file) { ch_mut = file(params.mutation_file) } else { ch_mut = Channel.empty() }
+    MODULE_ACTIVITY_PREDICTION (
+        INPUT_CHECK.out.config_file,
+        ch_data,
+        MODULE_ACTIVITY.out.module_info,
+        ch_mut,
+        FUNMAP.out.funmap_el
+    )
+    ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION.out.versions)
+
+    MODULE_ACTIVITY_PREDICTION_VIZ (
+        FUNMAP.out.funmap_el,
+        MODULE_ACTIVITY_PREDICTION.out.selected_modules,
+        MODULE_ACTIVITY.out.module_info
+    )
+    ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION_VIZ.out.versions)
 
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')

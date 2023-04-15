@@ -303,7 +303,7 @@ if __name__ == '__main__':
         else:
             all_results = pd.merge(all_results, results_df, on='module')
 
-    results_file = 'module_activity_scores.tsv'
+    results_file = 'module_activity_association.tsv'
     fig_name = os.path.splitext(results_file)[0]
     fig_name = f'{fig_name}.pdf'
     all_results.to_csv(results_file, sep='\t', index=False)
