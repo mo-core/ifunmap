@@ -12,7 +12,7 @@ process MODULE_ACTIVITY {
 
 
     output:
-    path 'module_info.*', emit: module_info
+    path 'module_info.tsv', emit: module_info
     path 'module_activity_*.*', emit: module_activity_scores
     path 'versions.yml', emit: versions
 

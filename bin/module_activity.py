@@ -192,8 +192,6 @@ if __name__ == '__main__':
     for (i, module) in enumerate(module_list):
             module_dict[module['name']] = module['genes']
 
-    # save the module dict to npy file
-    np.save('module_info.npy', module_dict)
     with open('module_info.tsv', 'w', newline='') as file:
         writer = csv.writer(file, delimiter='\t')
         for key, values in module_dict.items():
