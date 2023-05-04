@@ -196,6 +196,9 @@
                     "fa_icon": "fas fa-question-circle",
                     "hidden": true
                 },
+                "qc_only": {
+                    "type": "boolean"
+                },
                 "version": {
                     "type": "boolean",
                     "description": "Display version and exit.",

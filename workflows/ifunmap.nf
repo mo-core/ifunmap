@@ -26,7 +26,8 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 */
 
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/custom/dumpsoftwareversions/main'
-include { FUNMAP } from '../modules/local/funmap'
+include { FUNMAP_QC } from '../modules/local/funmap_qc'
+include { FUNMAP_RUN } from '../modules/local/funmap_run'
 include { ICE } from '../modules/local/ice'
 include { CLIQUE_ENRICH } from '../modules/local/clique_enrich'
 include { CLIQUE_VIZ } from '../modules/local/clique_viz'
@@ -53,64 +54,69 @@ workflow IFUNMAP {
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
-    FUNMAP (
-        INPUT_CHECK.out.config_file,
-        ch_data
-    )
-    ch_versions = ch_versions.mix(FUNMAP.out.versions)
+    if (params.qc_only) {
+        FUNMAP_QC(
+            INPUT_CHECK.out.config_file,
+            ch_data)
+        ch_versions = ch_versions.mix(FUNMAP_QC.out.versions)
+    } else {
+        FUNMAP_RUN (
+            INPUT_CHECK.out.config_file,
+            ch_data
+        )
+        ch_versions = ch_versions.mix(FUNMAP_RUN.out.versions)
+        ICE (
+            FUNMAP_RUN.out.funmap_el
+        )
+        ch_versions = ch_versions.mix(ICE.out.versions)
 
-    ICE (
-        FUNMAP.out.funmap_el
-    )
-    ch_versions = ch_versions.mix(ICE.out.versions)
+        CLIQUE_ENRICH (
+            FUNMAP_RUN.out.funmap_el,
+            ICE.out.ice_results
+        )
+        ch_versions = ch_versions.mix(CLIQUE_ENRICH.out.versions)
 
-    CLIQUE_ENRICH (
-        FUNMAP.out.funmap_el,
-        ICE.out.ice_results
-    )
-    ch_versions = ch_versions.mix(CLIQUE_ENRICH.out.versions)
+        NETWORK_ANALYSIS (
+            FUNMAP_RUN.out.funmap_el
+        )
+        ch_versions = ch_versions.mix(NETWORK_ANALYSIS.out.versions)
 
-    NETWORK_ANALYSIS (
-        FUNMAP.out.funmap_el
-    )
-    ch_versions = ch_versions.mix(NETWORK_ANALYSIS.out.versions)
+        CLIQUE_VIZ (
+            FUNMAP_RUN.out.funmap_el,
+            ICE.out.ice_results,
+            CLIQUE_ENRICH.out.clique_enrich_results,
+            INPUT_CHECK.out.config_file,
+            ch_data
+        )
+        ch_versions = ch_versions.mix(CLIQUE_VIZ.out.versions)
 
-    CLIQUE_VIZ (
-        FUNMAP.out.funmap_el,
-        ICE.out.ice_results,
-        CLIQUE_ENRICH.out.clique_enrich_results,
-        INPUT_CHECK.out.config_file,
-        ch_data
-    )
-    ch_versions = ch_versions.mix(CLIQUE_VIZ.out.versions)
+        if (params.tsi) { ch_tsi = file(params.tsi) } else { ch_tsi = Channel.empty() }
+        MODULE_ACTIVITY (
+            ICE.out.ice_results,
+            NETWORK_ANALYSIS.out.netsam_nsm,
+            INPUT_CHECK.out.config_file,
+            ch_data,
+            ch_tsi
+        )
+        ch_versions = ch_versions.mix(MODULE_ACTIVITY.out.versions)
 
-    if (params.tsi) { ch_tsi = file(params.tsi) } else { ch_tsi = Channel.empty() }
-    MODULE_ACTIVITY (
-        ICE.out.ice_results,
-        NETWORK_ANALYSIS.out.netsam_nsm,
-        INPUT_CHECK.out.config_file,
-        ch_data,
-        ch_tsi
-    )
-    ch_versions = ch_versions.mix(MODULE_ACTIVITY.out.versions)
+        if (params.mutation_file) { ch_mut = file(params.mutation_file) } else { ch_mut = Channel.empty() }
+        MODULE_ACTIVITY_PREDICTION (
+            INPUT_CHECK.out.config_file,
+            ch_data,
+            MODULE_ACTIVITY.out.module_info,
+            ch_mut,
+            FUNMAP_RUN.out.funmap_el
+        )
+        ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION.out.versions)
 
-    if (params.mutation_file) { ch_mut = file(params.mutation_file) } else { ch_mut = Channel.empty() }
-    MODULE_ACTIVITY_PREDICTION (
-        INPUT_CHECK.out.config_file,
-        ch_data,
-        MODULE_ACTIVITY.out.module_info,
-        ch_mut,
-        FUNMAP.out.funmap_el
-    )
-    ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION.out.versions)
-
-    MODULE_ACTIVITY_PREDICTION_VIZ (
-        FUNMAP.out.funmap_el,
-        MODULE_ACTIVITY_PREDICTION.out.selected_modules,
-        MODULE_ACTIVITY.out.module_info
-    )
-    ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION_VIZ.out.versions)
-
+        MODULE_ACTIVITY_PREDICTION_VIZ (
+            FUNMAP_RUN.out.funmap_el,
+            MODULE_ACTIVITY_PREDICTION.out.selected_modules,
+            MODULE_ACTIVITY.out.module_info
+        )
+        ch_versions = ch_versions.mix(MODULE_ACTIVITY_PREDICTION_VIZ.out.versions)
+    }
     CUSTOM_DUMPSOFTWAREVERSIONS (
         ch_versions.unique().collectFile(name: 'collated_versions.yml')
     )
