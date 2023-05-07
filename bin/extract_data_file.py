@@ -2,6 +2,7 @@
 import argparse
 import yaml
 import tarfile
+import os
 
 
 def arg_parse():
@@ -23,11 +24,10 @@ if __name__ == '__main__':
     config = yaml.load(open(args.config_file, 'r'), Loader=yaml.FullLoader)
     all_data_set = config['data_files']
     data_set = [x for x in all_data_set if x['name'] == args.dataset_name][0]
-    data_file = data_set['path']
+    target_data_file = data_set['path']
 
-    with tarfile.open(args.data_file, 'r:gz') as tar:
-        for member in tar.getmembers():
-            if member.name.endswith(data_file):
-                with open(args.output_file, 'wb') as f:
-                    f.write(tar.extractfile(member).read())
-                break
+    tmp_dir = 'tmp_data'
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
+    os.system(f'tar -xzf {args.data_file} --strip-components=1 -C {tmp_dir}')
+    os.system(f'ln -s {tmp_dir}/{target_data_file} {args.output_file}')
