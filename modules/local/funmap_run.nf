@@ -14,7 +14,6 @@ process FUNMAP_RUN {
     path 'results/networks/network_*.tsv', emit: funmap_networks
     path 'results/llr_*', emit: funmap_llr
     path 'results/figures/*', emit: funmap_figures
-    path 'results/saved_*', emit: funmap_saved
     path 'versions.yml', emit: versions
 
     when:
@@ -32,8 +31,8 @@ process FUNMAP_RUN {
 
     stub:
     """
-    wget "https://drive.google.com/uc?id=1oComOLXbB_OSd4OoAI1jhoX3tqUEq-Cs&export=download" -O results.tar.gz
-    tar -xzf results.tar.gz
+    wget "https://drive.google.com/uc?id=1oComOLXbB_OSd4OoAI1jhoX3tqUEq-Cs&export=download" -O funmap_run_results.tar.gz
+    tar -xzf funmap_run_results.tar.gz
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
        funmap: \$(funmap --version)

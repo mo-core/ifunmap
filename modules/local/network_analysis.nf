@@ -3,6 +3,8 @@ process NETWORK_ANALYSIS {
     label 'process_high'
 
     container 'registry.gitlab.com/bzhanglab/netsam:1.39.1'
+    // the option '--privileged' is needed for the container to run properly
+    containerOptions '--privileged'
 
     input:
     path funmap_el

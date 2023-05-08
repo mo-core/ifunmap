@@ -1,7 +1,8 @@
 process MODULE_ACTIVITY {
-    tag  'module_activity'
+    tag  "${if (workflow.stubRun) 'module_activity_stub' else 'module_activity'}"
     label 'process_high'
     container 'registry.gitlab.com/bzhanglab/python:3.8.13'
+    containerOptions '--privileged'
 
     input:
     path ice_clique
@@ -31,6 +32,16 @@ process MODULE_ACTIVITY {
         --netsam-nsm ${netsam_nsm} \\
         --data-file data.tsv \\
         --tsi-file ${tsi_file}
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+       python: 3.8.13
+    END_VERSIONS
+    """
+
+    stub:
+    """
+    wget "https://drive.google.com/uc?id=19KhjLjYFCdiSmniag4P2Xvtrp96txclY&export=download&confirm=9iBg" -O module_activity_results.tgz
+    tar -xzf module_activity_results.tgz
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
        python: 3.8.13

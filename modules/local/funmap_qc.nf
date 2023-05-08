@@ -26,4 +26,14 @@ process FUNMAP_QC {
     END_VERSIONS
     """
 
+   stub:
+    """
+    wget "https://drive.google.com/uc?id=1y6D26Hlf-Cigdz9tzrMZ3EWR55HclV9z&export=download" -O funmap_qc_results.tar.gz
+    tar -xzf funmap_qc_results.tar.gz
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+       funmap: \$(funmap --version)
+    END_VERSIONS
+    """
+
 }

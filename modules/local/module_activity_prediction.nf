@@ -1,5 +1,6 @@
 process MODULE_ACTIVITY_PREDICTION {
     tag  'module_activity_prediction'
+    tag  "${if (workflow.stubRun) 'module_activity_prediction_stub' else 'module_activity_prediction'}"
     label 'process_high'
     container 'registry.gitlab.com/bzhanglab/python:3.8.13'
 
@@ -38,4 +39,13 @@ process MODULE_ACTIVITY_PREDICTION {
     END_VERSIONS
     """
 
+    stub:
+    """
+    wget "https://drive.google.com/uc?id=1qf8YvUM-d12eU2zg7Ek5Stg41HwsN2K-&export=download&confirm=9iBg" -O module_activity_prediction_results.tgz
+    tar -xzf module_activity_prediction_results.tgz
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+       python: 3.8.13
+    END_VERSIONS
+    """
 }

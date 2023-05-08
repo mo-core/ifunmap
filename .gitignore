@@ -2,6 +2,9 @@
 .nextflow*
 work/
 data/
+bin/test/*
+bin/*.tsv
+bin/*.pdf
 results/
 .DS_Store
 testing/

@@ -35,6 +35,7 @@ include { NETWORK_ANALYSIS } from '../modules/local/network_analysis'
 include { MODULE_ACTIVITY} from '../modules/local/module_activity'
 include { MODULE_ACTIVITY_PREDICTION} from '../modules/local/module_activity_prediction'
 include { MODULE_ACTIVITY_PREDICTION_VIZ} from '../modules/local/module_activity_prediction_viz'
+include { PLOT_DARK_GENES } from '../modules/local/plot_dark_genes'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,6 +66,22 @@ workflow IFUNMAP {
             ch_data
         )
         ch_versions = ch_versions.mix(FUNMAP_RUN.out.versions)
+
+        // dark gene analysis is optional, default is true
+        if (params.dark_gene_tgi) {
+            ch_dark_genes = file(params.dark_gene_tgi)
+        } else {
+            ch_dark_genes = file("$projectDir/assets/dummy_file.txt", checkIfExists: true)
+        }
+        ch_pubmed_count = file(params.gene_pubmed_count)
+
+        PLOT_DARK_GENES(
+            FUNMAP_RUN.out.funmap_el,
+            ch_dark_genes,
+            ch_pubmed_count
+        )
+        ch_versions = ch_versions.mix(PLOT_DARK_GENES.out.versions)
+
         ICE (
             FUNMAP_RUN.out.funmap_el
         )

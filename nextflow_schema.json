@@ -214,6 +214,14 @@
                     "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
+                "gene_pubmed_count": {
+                    "type": "string",
+                    "default": "https://figshare.com/ndownloader/files/40450256"
+                },
+                "dark_gene_tgi": {
+                    "type": "string",
+                    "default": null
+                },
                 "email_on_fail": {
                     "type": "string",
                     "description": "Email address for completion summary, only when pipeline fails.",
