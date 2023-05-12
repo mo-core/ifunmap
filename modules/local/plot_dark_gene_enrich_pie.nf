@@ -1,17 +1,14 @@
-process PLOT_DARK_GENES {
-    tag  'plot_dark_genes'
+process PLOT_DARK_GENE_ENRICH_PIE {
+    tag  'plot_dark_genes_enrich_pie'
     label 'process_medium'
     container 'registry.gitlab.com/bzhanglab/python:3.8.13'
     containerOptions '--privileged'
 
     input:
-    path funmap_el
-    path dark_gene_tgi
-    path gene_pubmed_count
+    path enrich_results
 
     output:
     path '*.pdf', emit: pdf
-    path '*.tsv', emit: tsv
     path 'versions.yml', emit: versions
 
     when:
@@ -19,8 +16,7 @@ process PLOT_DARK_GENES {
 
     script:
     """
-    mv ${gene_pubmed_count} gene_pubmed_count.txt
-    plot_dark_genes.py -e ${funmap_el} -t ${dark_gene_tgi} -c gene_pubmed_count.txt
+    plot_dark_gene_enrich_pie.py -i ${enrich_results}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

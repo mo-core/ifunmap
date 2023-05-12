@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import os
 from os import path as osp
-import glob
-import re
 import argparse
 import pandas as pd
 import numpy as np
@@ -11,10 +9,6 @@ from matplotlib import colors
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-import networkx as nx
-import py4cytoscape as p4c
-import seaborn as sns
-from statannotations.Annotator import Annotator
 
 
 matplotlib.rcParams['pdf.fonttype'] = 42  # TrueType fonts for ease of editing in illustrator

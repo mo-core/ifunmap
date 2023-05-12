@@ -220,7 +220,11 @@
                 },
                 "dark_gene_tgi": {
                     "type": "string",
-                    "default": null
+                    "default": "None"
+                },
+                "dark_gene_n_neighbor": {
+                    "type": "integer",
+                    "default": 50
                 },
                 "email_on_fail": {
                     "type": "string",

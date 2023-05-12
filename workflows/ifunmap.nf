@@ -35,7 +35,9 @@ include { NETWORK_ANALYSIS } from '../modules/local/network_analysis'
 include { MODULE_ACTIVITY} from '../modules/local/module_activity'
 include { MODULE_ACTIVITY_PREDICTION} from '../modules/local/module_activity_prediction'
 include { MODULE_ACTIVITY_PREDICTION_VIZ} from '../modules/local/module_activity_prediction_viz'
-include { PLOT_DARK_GENES } from '../modules/local/plot_dark_genes'
+include { PLOT_DARK_GENES_HEATMAP } from '../modules/local/plot_dark_genes_heatmap'
+include { PLOT_DARK_GENE_ENRICH_PIE } from '../modules/local/plot_dark_gene_enrich_pie'
+include { DARK_GENE_ENRICH } from '../modules/local/dark_gene_enrich'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,12 +77,23 @@ workflow IFUNMAP {
         }
         ch_pubmed_count = file(params.gene_pubmed_count)
 
-        PLOT_DARK_GENES(
+        PLOT_DARK_GENES_HEATMAP(
             FUNMAP_RUN.out.funmap_el,
             ch_dark_genes,
             ch_pubmed_count
         )
-        ch_versions = ch_versions.mix(PLOT_DARK_GENES.out.versions)
+        ch_versions = ch_versions.mix(PLOT_DARK_GENES_HEATMAP.out.versions)
+
+        DARK_GENE_ENRICH(
+            FUNMAP_RUN.out.funmap_el,
+            ch_pubmed_count
+        )
+        ch_versions = ch_versions.mix(DARK_GENE_ENRICH.out.versions)
+
+        PLOT_DARK_GENE_ENRICH_PIE(
+            DARK_GENE_ENRICH.out.enrich_results
+        )
+        ch_versions = ch_versions.mix(PLOT_DARK_GENE_ENRICH_PIE.out.versions)
 
         ICE (
             FUNMAP_RUN.out.funmap_el
