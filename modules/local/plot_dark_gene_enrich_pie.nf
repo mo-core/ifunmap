@@ -6,6 +6,7 @@ process PLOT_DARK_GENE_ENRICH_PIE {
 
     input:
     path enrich_results
+    path top_neighbors
 
     output:
     path '*.pdf', emit: pdf
@@ -16,7 +17,7 @@ process PLOT_DARK_GENE_ENRICH_PIE {
 
     script:
     """
-    plot_dark_gene_enrich_pie.py -i ${enrich_results}
+    plot_dark_gene_enrich_pie.py -i ${enrich_results} -n ${top_neighbors}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

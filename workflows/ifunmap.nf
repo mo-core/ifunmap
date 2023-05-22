@@ -91,7 +91,8 @@ workflow IFUNMAP {
         ch_versions = ch_versions.mix(DARK_GENE_ENRICH.out.versions)
 
         PLOT_DARK_GENE_ENRICH_PIE(
-            DARK_GENE_ENRICH.out.enrich_results
+            DARK_GENE_ENRICH.out.enrich_results,
+            DARK_GENE_ENRICH.out.top_neighbors
         )
         ch_versions = ch_versions.mix(PLOT_DARK_GENE_ENRICH_PIE.out.versions)
 
