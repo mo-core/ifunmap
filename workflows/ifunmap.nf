@@ -60,11 +60,13 @@ workflow IFUNMAP {
     if (params.qc_only) {
         FUNMAP_QC(
             INPUT_CHECK.out.config_file,
+            INPUT_CHECK.out.data_path_file,
             ch_data)
         ch_versions = ch_versions.mix(FUNMAP_QC.out.versions)
     } else {
         FUNMAP_RUN (
             INPUT_CHECK.out.config_file,
+            INPUT_CHECK.out.data_path_file,
             ch_data
         )
         ch_versions = ch_versions.mix(FUNMAP_RUN.out.versions)

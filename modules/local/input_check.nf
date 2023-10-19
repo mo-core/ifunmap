@@ -10,6 +10,7 @@ process INPUT_FILE_CHECK {
 
     output:
     path 'config.yml' , emit: config_file
+    path 'data_path.txt', emit: data_path_file
     path 'versions.yml', emit: versions
 
     when:

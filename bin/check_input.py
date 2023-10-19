@@ -50,17 +50,22 @@ def is_tar_gz_file(filename):
 
 
 def check_inputs(config_file, data_file):
-    required_fields = ['dataset_name', 'data_files']
+    required_fields = ['dataset_name', 'data_files', 'data_path']
     try:
         with open(config_file, 'r') as file:
             yaml_obj = yaml.safe_load(file)
             if not all(field in yaml_obj for field in required_fields):
                 print(f'configuration file required fields: {required_fields}')
                 raise ValueError('Missing required fields in config file!')
+            # get the value of 'data_path' field
+            data_path = yaml_obj['data_path']
     except yaml.YAMLError:
         return False
 
     is_tar_gz_file(data_file)
+
+    with open('data_path.txt', 'w') as file:
+        file.write(data_path)
 
     # funmap should check if the files listed under data_files are also in the tar.gz file
 

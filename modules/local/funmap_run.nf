@@ -6,6 +6,7 @@ process FUNMAP_RUN {
 
     input:
     path config_file
+    path data_path_file
     path data_file
 
     output:
@@ -21,7 +22,13 @@ process FUNMAP_RUN {
 
     script:
     """
-    funmap run -c ${config_file} -d ${data_file}
+    read -r target_file < ${data_path_file}
+    if [ -e "\$target_file" ]; then
+        target_directory=\$(dirname "\$target_file")
+        mkdir -p "\$target_directory"
+        mv ${data_file} "\$target_file"
+
+    funmap run -c ${config_file}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
