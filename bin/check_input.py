@@ -50,7 +50,7 @@ def is_tar_gz_file(filename):
 
 
 def check_inputs(config_file, data_file):
-    required_fields = ['dataset_name', 'data_files', 'data_path']
+    required_fields = ['data_files', 'data_path']
     try:
         with open(config_file, 'r') as file:
             yaml_obj = yaml.safe_load(file)
