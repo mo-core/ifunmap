@@ -7,10 +7,9 @@ workflow INPUT_CHECK {
 
     main:
     INPUT_FILE_CHECK (config_file, data_file)
-        .config_file
-        .set { config_file }
 
     emit:
-    config_file // channel: [ config.yml ]
+    config_file = INPUT_FILE_CHECK.out.config_file  // channel: [ config.yml ]
+    data_path_file = INPUT_FILE_CHECK.out.data_path_file // channel: [ data_file_path ]
     versions = INPUT_FILE_CHECK.out.versions // channel: [ versions.yml ]
 }
