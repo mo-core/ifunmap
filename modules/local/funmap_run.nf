@@ -2,7 +2,7 @@ process FUNMAP_RUN {
     tag  "${if (workflow.stubRun) 'funmap_stub' else 'funmap'}"
     label  "${if (workflow.stubRun) 'process_funmap_stub' else 'process_funmap'}"
 
-    container 'registry.gitlab.com/bzhanglab/funmap:latest'
+    container "${params.funmap_container}"
 
     input:
     path config_file

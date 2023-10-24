@@ -2,7 +2,7 @@ process FUNMAP_QC {
     tag  "funmap_qc"
     label  "process_low"
 
-    container 'registry.gitlab.com/bzhanglab/funmap:latest'
+    container "${params.funmap_container}"
 
     input:
     path config_file
