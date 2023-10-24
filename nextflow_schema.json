@@ -199,6 +199,10 @@
                 "qc_only": {
                     "type": "boolean"
                 },
+                "funmap_container": {
+                    "type": "string",
+                    "default": "registry.gitlab.com/bzhanglab/funmap:0.1.15"
+                },
                 "version": {
                     "type": "boolean",
                     "description": "Display version and exit.",
@@ -270,6 +274,9 @@
                     "default": true,
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
+                },
+                "schema_ignore_params": {
+                    "type": "string"
                 },
                 "show_hidden_params": {
                     "type": "boolean",
