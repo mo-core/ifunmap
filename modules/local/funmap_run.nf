@@ -11,8 +11,9 @@ process FUNMAP_RUN {
 
     output:
     path 'results/*/config.yml', emit: funmap_config
-    path 'results/*/networks/funmap.tsv', emit: funmap_el
-    path 'results/*/networks/network_*.tsv', emit: funmap_networks
+    // we will select newwork generated with expression + ppi (ei) as the final network
+    path 'results/*/networks/funmap_ei.tsv', emit: funmap_el
+    path 'results/*/networks/funmap_*.tsv', emit: funmap_networks
     path 'results/*/llr_*', emit: funmap_llr
     path 'results/*/figures/*', emit: funmap_figures
     path 'versions.yml', emit: versions
