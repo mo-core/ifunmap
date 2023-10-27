@@ -13,6 +13,7 @@ workflow MOCORE_IFUNMAP {
 
 workflow {
     exitCode = CHECK_CYTOSCAPE()
+    println exitCode
     if (exitCode == 0) {
         MOCORE_IFUNMAP ()
     } else {
