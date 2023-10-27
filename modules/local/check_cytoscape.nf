@@ -5,6 +5,7 @@ process CHECK_CYTOSCAPE {
     """
     if docker ps --format '{{.Image}}' | grep -q "cytoscape/cytoscape-desktop"; then
        echo "A container based on cytoscape/cytoscape-desktop is running."
+       exit 0
     else
        echo "No container based on cytoscape/cytoscape-desktop is running."
        echo "Please start a container based on cytoscape/cytoscape-desktop before running this workflow."
