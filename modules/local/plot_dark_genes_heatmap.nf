@@ -15,7 +15,7 @@ process PLOT_DARK_GENES_HEATMAP {
     path 'versions.yml', emit: versions
 
     when:
-    task.ext.when == null || task.ext.when
+    !(dark_gene_tgi.name =~ /dummy/)
 
     script:
     """
