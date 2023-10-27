@@ -12,12 +12,25 @@ workflow MOCORE_IFUNMAP {
 }
 
 workflow {
-    CHECK_CYTOSCAPE()
-    exitCode = file(CHECK_CYTOSCAPE.out.exitcode).text.toInteger()
-    if (exitCode == 0) {
+    def dockerImageName = "cytoscape/cytoscape-desktop"
+    def cmd = ["docker", "ps", "--format", "{{.Image}}"]
+    def processBuilder = new ProcessBuilder(cmd)
+    def process = processBuilder.start()
+    def reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
+    def line
+    def isRunning = false
+
+    while ((line = reader.readLine()) != null) {
+        if (line.contains(dockerImageName)) {
+            isRunning = true
+            break
+        }
+    }
+    process.waitFor()
+
+    if (isRunning) {
         MOCORE_IFUNMAP ()
     } else {
-        // print error message
         println "Cytoscape is not running..."
     }
 }
