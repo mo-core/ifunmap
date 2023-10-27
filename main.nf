@@ -12,7 +12,11 @@ workflow MOCORE_IFUNMAP {
 }
 
 workflow {
-    if (!CHECK_CYTOSCAPE()) {
+    exitCode = CHECK_CYTOSCAPE()
+    if (exitCode == 0) {
         MOCORE_IFUNMAP ()
+    } else {
+        // print error message
+        println "Cytoscape is not running..."
     }
 }
