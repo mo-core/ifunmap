@@ -12,7 +12,7 @@ workflow MOCORE_IFUNMAP {
 }
 
 workflow {
-    if (CHECK_CYTOSCAPE()) {
+    if (!CHECK_CYTOSCAPE()) {
         MOCORE_IFUNMAP ()
     }
 }
