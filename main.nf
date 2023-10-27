@@ -32,5 +32,8 @@ workflow {
         MOCORE_IFUNMAP ()
     } else {
         println "Cytoscape is not running..."
+        println "Please start a container based on cytoscape/cytoscape-desktop before running this workflow"
+        println "e.g., docker run -p 1234:1234 -v /data:/data -it cytoscape/cytoscape-desktop:3.9.1"
+        println "replace /data with the path to your data directory"
     }
 }
